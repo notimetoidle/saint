@@ -9,7 +9,6 @@ resource "aws_lambda_layer_version" "aws_lambda_powertools" {
   source_code_hash         = data.archive_file.layer_aws_lambda_powertools.output_base64sha256
   layer_name               = "${var.name}-aws-lambda-powertools"
   compatible_runtimes      = [var.runtime]
-  compatible_architectures = [var.architecture]
 }
 
 data "archive_file" "layer_python_telegram_bot" {
@@ -23,7 +22,6 @@ resource "aws_lambda_layer_version" "python_telegram_bot" {
   source_code_hash         = data.archive_file.layer_python_telegram_bot.output_base64sha256
   layer_name               = "${var.name}-python-telegram-bot"
   compatible_runtimes      = [var.runtime]
-  compatible_architectures = [var.architecture]
 }
 
 data "archive_file" "layer_spotipy" {
@@ -37,5 +35,4 @@ resource "aws_lambda_layer_version" "spotipy" {
   source_code_hash         = data.archive_file.layer_spotipy.output_base64sha256
   layer_name               = "${var.name}-spotipy"
   compatible_runtimes      = [var.runtime]
-  compatible_architectures = [var.architecture]
 }

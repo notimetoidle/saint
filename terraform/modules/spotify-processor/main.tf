@@ -39,7 +39,7 @@ resource "aws_cloudwatch_log_group" "lambda_main" {
 data "archive_file" "lambda_main" {
   type        = "zip"
   source_dir  = "${path.module}/lambda"
-  output_path = "${var.build_dir}/${var.name}-main"
+  output_path = "${var.build_dir}/${var.name}-main.zip"
 }
 
 resource "aws_lambda_function" "main" {
@@ -52,7 +52,6 @@ resource "aws_lambda_function" "main" {
   source_code_hash = data.archive_file.lambda_main.output_base64sha256
   memory_size      = var.memory_size
   layers           = var.layers
-  architectures    = [var.architecture]
 
   depends_on = [aws_cloudwatch_log_group.lambda_main]
 }

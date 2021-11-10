@@ -91,7 +91,7 @@ resource "aws_cloudwatch_log_group" "lambda_webhook" {
 data "archive_file" "lambda_webhook" {
   type        = "zip"
   source_dir  = "${path.module}/lambda"
-  output_path = "${var.build_dir}/${var.name}-webhook"
+  output_path = "${var.build_dir}/${var.name}-webhook.zip"
 }
 
 resource "aws_lambda_function" "webhook" {
@@ -104,7 +104,6 @@ resource "aws_lambda_function" "webhook" {
   source_code_hash = data.archive_file.lambda_webhook.output_base64sha256
   memory_size      = var.memory_size
   layers           = var.layers
-  architectures    = [var.architecture]
 
   depends_on = [aws_cloudwatch_log_group.lambda_webhook]
 }

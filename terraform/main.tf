@@ -6,7 +6,6 @@ module "spotify_processor" {
     aws_lambda_layer_version.python_telegram_bot.arn
   ]
   runtime      = var.runtime
-  architecture = var.architecture
   build_dir    = "${path.root}/../build"
 }
 
@@ -19,7 +18,6 @@ module "spotify_scraper" {
     aws_lambda_layer_version.spotipy.arn
   ]
   runtime      = var.runtime
-  architecture = var.architecture
   build_dir    = "${path.root}/../build"
 }
 
@@ -32,6 +30,5 @@ module "telegram_bot" {
     aws_lambda_layer_version.python_telegram_bot.arn
   ]
   runtime      = var.runtime
-  architecture = var.architecture
   build_dir    = "${path.root}/../build"
 }
