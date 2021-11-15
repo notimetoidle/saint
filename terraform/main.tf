@@ -5,8 +5,8 @@ module "spotify_processor" {
   layers = [
     aws_lambda_layer_version.python_telegram_bot.arn
   ]
-  runtime      = var.runtime
-  build_dir    = "${path.root}/../build"
+  runtime   = var.runtime
+  build_dir = "${path.root}/../build"
 }
 
 module "spotify_scraper" {
@@ -17,8 +17,8 @@ module "spotify_scraper" {
     aws_lambda_layer_version.aws_lambda_powertools.arn,
     aws_lambda_layer_version.spotipy.arn
   ]
-  runtime      = var.runtime
-  build_dir    = "${path.root}/../build"
+  runtime   = var.runtime
+  build_dir = "${path.root}/../build"
 }
 
 module "telegram_bot" {
@@ -29,6 +29,14 @@ module "telegram_bot" {
     aws_lambda_layer_version.aws_lambda_powertools.arn,
     aws_lambda_layer_version.python_telegram_bot.arn
   ]
-  runtime      = var.runtime
-  build_dir    = "${path.root}/../build"
+  runtime   = var.runtime
+  build_dir = "${path.root}/../build"
+}
+
+output "telegram_bot_api_url" {
+  value = module.telegram_bot.api_url
+}
+
+output "telegram_bot_api_v1_webhook_url" {
+  value = module.telegram_bot.api_v1_webhook_url
 }

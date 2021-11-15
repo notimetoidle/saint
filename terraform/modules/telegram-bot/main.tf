@@ -50,6 +50,18 @@ resource "aws_api_gateway_stage" "v1" {
   stage_name    = "v1"
 }
 
+resource "aws_api_gateway_usage_plan" "v1" {
+  name = var.name
+  api_stages {
+    api_id = aws_api_gateway_rest_api.main.id
+    stage  = aws_api_gateway_stage.v1.stage_name
+  }
+  throttle_settings {
+    burst_limit = 5
+    rate_limit  = 5
+  }
+}
+
 resource "aws_iam_role" "lambda_webhook" {
   name = var.name
 
@@ -115,3 +127,8 @@ resource "aws_lambda_permission" "apigw_webhook" {
   # https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-control-access-using-iam-policies-to-invoke-api.html
   source_arn = "${aws_api_gateway_stage.v1.execution_arn}/${aws_api_gateway_method.webhook_post.http_method}${aws_api_gateway_resource.webhook.path}"
 }
+
+
+# TODO
+# multiple part path /v1/webhook/update
+# working throttling
