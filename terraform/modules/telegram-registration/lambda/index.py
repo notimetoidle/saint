@@ -6,7 +6,6 @@ from telegram import Bot
 
 tracer = Tracer()
 logger = Logger()
-
 token = parameters.get_parameter(os.environ["TELEGRAM_TOKEN_PARAM"], decrypt=True)
 webhook_url = os.environ["WEBHOOK_URL"]
 bot = Bot(token)

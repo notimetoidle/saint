@@ -1,22 +1,25 @@
-from re import I
+import os
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.event_handler.api_gateway import ApiGatewayResolver
-# from aws_lambda_powertools.utilities import parameters
+from aws_lambda_powertools.utilities import parameters
+from telegram import Bot
+from telegram.ext import Dispatcher
 
-
-# parameter_prefix = os.environ.get("PARAMETER_PREFIX") or ""
-# bot_id = parameters.get_secret(f"{parameter_prefix}/telegram-bot/bot-id")
-# bot_token = parameters.get_secret(f"{parameter_prefix}/telegram-bot/bot-token")
 
 tracer = Tracer()
 logger = Logger()
 app = ApiGatewayResolver()  # by default API Gateway REST API (v1)
+token = parameters.get_parameter(os.environ["TELEGRAM_TOKEN_PARAM"], decrypt=True)
+webhook_url = os.environ["WEBHOOK_URL"]
+bot = Bot(token)
+dispatcher = Dispatcher(bot)
 
 
 @app.post("/webhook")
+@tracer.capture_method
 def post_webhook():
-    logger.info(app.current_event)
+    logger.info(app.current_event.json_body)
     return {
         "message": "hello"
     }
