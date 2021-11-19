@@ -1,0 +1,28 @@
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-anatomy.html
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
+  ApiGatewayAccountRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-api-gateway-account
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action: sts:AssumeRole
+            Principal:
+              Service: apigateway.amazonaws.com
+            Effect: Allow
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-account.html
+  ApiGatewayAccountSettings:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt ApiGatewayAccountRole.Arn
+
+Outputs:
+  ApiGatewayAccountRole:
+    Value: !GetAtt ApiGatewayAccountRole.Arn
