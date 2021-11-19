@@ -1,6 +1,6 @@
 # api gateway
 # register with telegram?
-# 
+#
 
 resource "aws_api_gateway_rest_api" "main" {
   name = var.name
@@ -44,21 +44,28 @@ resource "aws_api_gateway_deployment" "webhook" {
   }
 }
 
+resource "aws_cloudwatch_log_group" "main_v1" {
+  name              = "API-Gateway-Execution-Logs_${aws_api_gateway_rest_api.main.id}/v1"
+  retention_in_days = 30
+}
+
 resource "aws_api_gateway_stage" "v1" {
+  depends_on    = [aws_cloudwatch_log_group.main_v1]
   deployment_id = aws_api_gateway_deployment.webhook.id
   rest_api_id   = aws_api_gateway_rest_api.main.id
   stage_name    = "v1"
 }
 
-resource "aws_api_gateway_usage_plan" "v1" {
-  name = var.name
-  api_stages {
-    api_id = aws_api_gateway_rest_api.main.id
-    stage  = aws_api_gateway_stage.v1.stage_name
-  }
-  throttle_settings {
-    burst_limit = 5
-    rate_limit  = 5
+resource "aws_api_gateway_method_settings" "v1_all" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  stage_name  = aws_api_gateway_stage.v1.stage_name
+  method_path = "*/*"
+
+  settings {
+    metrics_enabled        = false
+    logging_level          = "ERROR"
+    throttling_burst_limit = 10
+    throttling_rate_limit  = 5
   }
 }
 
@@ -75,20 +82,65 @@ resource "aws_iam_role" "lambda_webhook" {
       Effect = "Allow"
     }]
   })
+}
 
-  inline_policy {
-    policy = jsonencode({
-      Version = "2012-10-17"
-      Statement = [{
-        Action = [
-          "logs:PutLogEvents",
-          "logs:CreateLogStream"
-        ]
-        Effect   = "Allow"
-        Resource = "${aws_cloudwatch_log_group.lambda_webhook.arn}:*"
-      }]
-    })
-  }
+resource "aws_iam_role_policy" "lambda_webhook_logs" {
+  name = "${var.name}-logs"
+  role = aws_iam_role.lambda_webhook.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = [
+        "logs:PutLogEvents",
+        "logs:CreateLogStream"
+      ]
+      Effect   = "Allow"
+      Resource = "${aws_cloudwatch_log_group.lambda_webhook.arn}:*"
+    }]
+  })
+}
+
+# By using these two data sources to construct the token param ARN instead of aws_ssm_parameter
+# we are avoiding having the Telegram token secret being stored in the state file as plain text
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ssm_parameter
+data "aws_partition" "current" {}
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
+
+locals {
+  token_param_arn = "arn:${data.aws_partition.current.partition}:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${trimprefix(var.token_param, "/")}"
+  ssm_key_arn     = "arn:${data.aws_partition.current.partition}:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:alias/aws/ssm"
+}
+
+resource "aws_iam_role_policy" "lambda_webhook_ssm" {
+  name = "${var.name}-ssm"
+  role = aws_iam_role.lambda_webhook.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      # https://docs.aws.amazon.com/service-authorization/latest/reference/list_awssystemsmanager.html
+      Action = [
+        "ssm:GetParameter"
+      ]
+      Effect   = "Allow"
+      Resource = local.token_param_arn
+      }, {
+      # https://docs.aws.amazon.com/service-authorization/latest/reference/list_awskeymanagementservice.html
+      # https://docs.aws.amazon.com/kms/latest/developerguide/services-parameter-store.html#parameter-store-encryption-context
+      Action = [
+        "kms:Decrypt"
+      ]
+      Effect   = "Allow"
+      Resource = local.ssm_key_arn
+      Condition = {
+        StringEquals = {
+          "kms:EncryptionContext:PARAMETER_ARN" = local.token_param_arn
+        }
+      }
+    }]
+  })
 }
 
 locals {
@@ -116,6 +168,12 @@ resource "aws_lambda_function" "webhook" {
   source_code_hash = data.archive_file.lambda_webhook.output_base64sha256
   memory_size      = var.memory_size
   layers           = var.layers
+
+  environment {
+    variables = {
+      TELEGRAM_TOKEN_PARAM = var.token_param
+    }
+  }
 
   depends_on = [aws_cloudwatch_log_group.lambda_webhook]
 }

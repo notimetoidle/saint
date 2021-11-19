@@ -16,6 +16,7 @@ app = ApiGatewayResolver()  # by default API Gateway REST API (v1)
 
 @app.post("/webhook")
 def post_webhook():
+    logger.info(app.current_event)
     return {
         "message": "hello"
     }
@@ -32,4 +33,3 @@ def handler(event, context):
 # create events for spotify-scraper
 
 # separate telegram-processor that can handle events from spotify-whatever? or user requested information such as backups?
-

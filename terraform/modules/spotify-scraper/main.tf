@@ -11,20 +11,23 @@ resource "aws_iam_role" "lambda_main" {
       Effect = "Allow"
     }]
   })
+}
 
-  inline_policy {
-    policy = jsonencode({
-      Version = "2012-10-17"
-      Statement = [{
-        Action = [
-          "logs:PutLogEvents",
-          "logs:CreateLogStream"
-        ]
-        Effect   = "Allow"
-        Resource = "${aws_cloudwatch_log_group.lambda_main.arn}:*"
-      }]
-    })
-  }
+resource "aws_iam_role_policy" "lambda_main_logs" {
+  name = "${var.name}-logs"
+  role = aws_iam_role.lambda_main.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = [
+        "logs:PutLogEvents",
+        "logs:CreateLogStream"
+      ]
+      Effect   = "Allow"
+      Resource = "${aws_cloudwatch_log_group.lambda_main.arn}:*"
+    }]
+  })
 }
 
 locals {

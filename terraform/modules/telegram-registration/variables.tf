@@ -11,3 +11,4 @@ variable "handler" {
   default = "index.handler"
 }
 variable "token_param" {}
+variable "webhook_url" {}
